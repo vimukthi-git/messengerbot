@@ -2,7 +2,7 @@
 
 Work in progress. contributions welcome.
 
-### Getting stated
+### Getting started
 
 For an example check `webhook_test.go`. I will update this page as I finalize things.
 
