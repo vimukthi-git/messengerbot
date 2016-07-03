@@ -67,14 +67,14 @@ const (
 
 type Message struct {
 	Text string  `json:"text,omitempty"`
-	Attachment Attachment  `json:"attachment,omitempty"`
-	NotificationType NotificationType `json:"notification_type,omitempty"`
+	Attachment *Attachment  `json:"attachment,omitempty"`
 }
 
 func NewTextMessage(text string, notificationType NotificationType) *Message {
 	m := new(Message)
 	m.Text = text
-	m.NotificationType = notificationType
+	m.Attachment = nil
+	//m.NotificationType = notificationType
 	return m
 }
 
@@ -98,9 +98,9 @@ func (a ImagePayload) AttachmentPayloadType() PayloadType {
 func NewImageMessage(url string, notificationType NotificationType) *Message {
 	m := new(Message)
 	i := ImagePayload{url}
-	a := Attachment{i.AttachmentPayloadType(), i}
+	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	m.NotificationType = notificationType
+	//m.NotificationType = notificationType
 	return m
 }
 
@@ -124,9 +124,9 @@ type GenericTemplateElement struct {
 func NewGenericMessage(elements []GenericTemplateElement, notificationType NotificationType) *Message {
 	m := new(Message)
 	i := GenericTemplate{GENERIC, elements}
-	a := Attachment{i.AttachmentPayloadType(), i}
+	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	m.NotificationType = notificationType
+	//m.NotificationType = notificationType
 	return m
 }
 
@@ -139,9 +139,9 @@ type ButtonTemplate struct {
 func NewButtonMessage(text string, buttons []Button, notificationType NotificationType) *Message {
 	m := new(Message)
 	i := ButtonTemplate{BUTTON, text, buttons}
-	a := Attachment{i.AttachmentPayloadType(), i}
+	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	m.NotificationType = notificationType
+	//m.NotificationType = notificationType
 	return m
 }
 
@@ -188,9 +188,9 @@ func NewReceiptMessage(recipientName string, orderNumber string, currency string
 		paymentSummary,
 		adjustments,
 	}
-	a := Attachment{i.AttachmentPayloadType(), i}
+	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	m.NotificationType = notificationType
+	//m.NotificationType = notificationType
 	return m
 }
 
@@ -241,4 +241,5 @@ type Sender struct {
 type MessageEnvelope struct {
 	Recipient Recipient `json:"recipient"`
 	Message   *Message   `json:"message"`
+	//NotificationType NotificationType `json:"notification_type,omitempty"`
 }
