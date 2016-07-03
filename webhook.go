@@ -101,11 +101,11 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 							msg := message.(map[string]interface{})
 							if attachments, ok := messagingEvent["attachments"].(map[string]interface{}); ok {
 								attachmentPayload := attachments["payload"].(map[string]interface{})
-								w.attachementMessageCallback(w, pageId, sender, recipient, time.Unix(sentTime, 0),
+								w.attachementMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
 									IncomingAttachmentMessage{msg["mid"].(string), msg["seq"].(float64),
 										attachments["type"].(string), attachmentPayload["url"].(string)})
 							} else {
-								w.messageCallback(w, pageId, sender, recipient, time.Unix(sentTime, 0),
+								w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
 									IncomingTextMessage{msg["mid"].(string), msg["seq"].(float64), msg["text"].(string)})
 							}
 						} else if delivery, ok := messagingEvent["delivery"]; ok {

@@ -18,19 +18,19 @@ type IncomingAttachmentMessage struct {
 }
 
 
-type VerifiedCallback func(*webhook) string
+type VerifiedCallback func() string
 
-type VerificationFailedCallback func(*webhook) string
+type VerificationFailedCallback func() string
 
-type OptinCallback func(*webhook) string
+type OptinCallback func() string
 
-type TextMessageCallback func(*webhook, string, Sender, Recipient, time.Time, IncomingTextMessage) bool
+type TextMessageCallback func(string, Sender, Recipient, time.Time, IncomingTextMessage) bool
 
-type AttachementMessageCallback func(*webhook, string, Sender, Recipient, time.Time, IncomingAttachmentMessage) bool
+type AttachementMessageCallback func(string, Sender, Recipient, time.Time, IncomingAttachmentMessage) bool
 
-type DeliveryCallback func(*webhook) string
+type DeliveryCallback func() string
 
-type PostbackCallback func(*webhook) string
+type PostbackCallback func() string
 
 // send api
 // https://developers.facebook.com/docs/messenger-platform/send-api-reference

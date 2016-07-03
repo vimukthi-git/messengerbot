@@ -9,7 +9,7 @@ import (
 func TestWebhook(t *testing.T) {
 	config := getTestConfig();
 	w := NewMessengerWebhook(config.ValidationToken, config.PageAccessToken)
-	w.MessageHandler(func(w *webhook, pageId string, s Sender, r Recipient, t time.Time, m IncomingTextMessage) bool {
+	w.MessageHandler(func(pageId string, s Sender, r Recipient, t time.Time, m IncomingTextMessage) bool {
 		switch m.Text {
 		case "image":
 			w.SendImageMessageByRecipientId(s.Id, "http://messengerdemo.parseapp.com/img/touch.png", "")
