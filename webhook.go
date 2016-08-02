@@ -102,11 +102,51 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 							//log.Println(msg["attachments"].([]interface{}))
 							if attachments, ok := msg["attachments"].([]interface{}); ok {
 								for _, attachment := range attachments {
-									attachmentMap := attachment.(map[string]interface{})
-									attachmentPayload := attachmentMap["payload"].(map[string]interface{})
-									w.attachmentMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
-										IncomingAttachmentMessage{msg["mid"].(string), msg["seq"].(float64),
-											attachmentMap["type"].(string), attachmentPayload["url"].(string)})
+									stop := false
+
+									attachmentMap, ok_attachmentMap := attachment.(map[string]interface{})
+									if !ok_attachmentMap {
+										stop = true
+										log.Println("warning: cannot attachment to map[string]interface{}")
+									}
+
+									attachmentPayload, ok_attachmentPayload := attachmentMap["payload"].(map[string]interface{})
+									if !ok_attachmentPayload {
+										stop = true
+										log.Println("warning: cannot cast attachmentMap[\"payload\"] to map[string]interface{}")
+									}
+
+									str_mid, ok_mid := msg["mid"].(string)
+									if ok_mid {
+										stop = true
+										log.Println("warning: cannot cast msg[\"mid\"] to string")
+									}
+
+									float_seq, ok_seq := msg["seq"].(float64);
+									if ok_seq {
+										stop = true
+										log.Println("warning: cannot cast msg[\"seq\"] to float")
+									}
+
+									str_type, ok_type := attachmentMap["type"].(string)
+									if ok_type {
+										stop = true
+										log.Println("warning: cannot cast attachmentMap[\"type\"] to string")
+									}
+
+
+									str_url, ok_url := attachmentPayload["url"].(string);
+									if ok_url {
+										stop = true
+										log.Println("warning: cannot cast attachmentPayload[\"url\"].(string)} to string")
+									}
+
+									if !stop {
+										w.attachmentMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
+										IncomingAttachmentMessage{str_mid, float_seq, str_type, str_url})
+									} else {
+										log.Println("warning: callback stopped due to casting errors")
+									}
 								}
 
 							} else {
