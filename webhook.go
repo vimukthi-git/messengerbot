@@ -97,7 +97,6 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 						if optin, ok := messagingEvent["optin"]; ok {
 							log.Println("optin : ", optin)
 						} else if message, ok := messagingEvent["message"]; ok {
-							log.Println("message : ")
 							sentTime := int64(messagingEvent["timestamp"].(float64))
 							msg := message.(map[string]interface{})
 							//log.Println(msg["attachments"].([]interface{}))
