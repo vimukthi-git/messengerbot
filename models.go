@@ -35,6 +35,14 @@ type PostbackCallback func() string
 // send api
 // https://developers.facebook.com/docs/messenger-platform/send-api-reference
 
+type SenderActionType string
+
+const (
+	TYPING_ON SenderActionType = "typing_on"
+	TYPING_OFF SenderActionType = "typing_off"
+	MARK_SEEN SenderActionType = "mark_seen"
+)
+
 type NotificationType string
 
 const (
@@ -58,6 +66,12 @@ const (
 	RECEIPT TemplateType = "receipt"
 )
 
+type QuickReplyContentType string
+
+const (
+	TEXT QuickReplyContentType = "text"
+)
+
 type ButtonType string
 
 const (
@@ -68,13 +82,20 @@ const (
 type Message struct {
 	Text string  `json:"text,omitempty"`
 	Attachment *Attachment  `json:"attachment,omitempty"`
+	QuickReplies []QuickReply `json:"quick_replies,omitempty"`
 }
 
-func NewTextMessage(text string, notificationType NotificationType) *Message {
+type QuickReply struct {
+	ContentType  QuickReplyContentType  `json:"content_type,omitempty"`
+	Title  string  `json:"title,omitempty"`
+	Payload string `json:"payload,omitempty"`
+}
+
+func NewTextMessage(text string, quickReplies []QuickReply) *Message {
 	m := new(Message)
 	m.Text = text
 	m.Attachment = nil
-	//m.NotificationType = notificationType
+	m.QuickReplies = quickReplies
 	return m
 }
 
@@ -95,12 +116,12 @@ func (a ImagePayload) AttachmentPayloadType() PayloadType {
 	return IMAGE
 }
 
-func NewImageMessage(url string, notificationType NotificationType) *Message {
+func NewImageMessage(url string, quickReplies []QuickReply) *Message {
 	m := new(Message)
 	i := ImagePayload{url}
 	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	//m.NotificationType = notificationType
+	m.QuickReplies = quickReplies
 	return m
 }
 
@@ -121,12 +142,12 @@ type GenericTemplateElement struct {
 	Buttons []Button `json:"buttons,omitempty"`
 }
 
-func NewGenericMessage(elements []GenericTemplateElement, notificationType NotificationType) *Message {
+func NewGenericMessage(elements []GenericTemplateElement, quickReplies []QuickReply) *Message {
 	m := new(Message)
 	i := GenericTemplate{GENERIC, elements}
 	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	//m.NotificationType = notificationType
+	m.QuickReplies = quickReplies
 	return m
 }
 
@@ -136,12 +157,12 @@ type ButtonTemplate struct {
 	Buttons []Button `json:"buttons,omitempty"`
 }
 
-func NewButtonMessage(text string, buttons []Button, notificationType NotificationType) *Message {
+func NewButtonMessage(text string, buttons []Button, quickReplies []QuickReply) *Message {
 	m := new(Message)
 	i := ButtonTemplate{BUTTON, text, buttons}
 	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	//m.NotificationType = notificationType
+	m.QuickReplies = quickReplies
 	return m
 }
 
@@ -173,7 +194,7 @@ type ReceiptTemplate struct {
 func NewReceiptMessage(recipientName string, orderNumber string, currency string, paymentMethod string,
 		timestamp string, orderUrl string, elements []ReceiptTemplateElement,
 		shippingAddress Address, paymentSummary Summary, adjustments []Adjustment,
-		notificationType NotificationType) *Message {
+		quickReplies []QuickReply) *Message {
 	m := new(Message)
 	i := ReceiptTemplate{
 		RECEIPT,
@@ -190,7 +211,7 @@ func NewReceiptMessage(recipientName string, orderNumber string, currency string
 	}
 	a := &Attachment{i.AttachmentPayloadType(), i}
 	m.Attachment = a
-	//m.NotificationType = notificationType
+	m.QuickReplies = quickReplies
 	return m
 }
 
@@ -241,5 +262,6 @@ type Sender struct {
 type MessageEnvelope struct {
 	Recipient Recipient `json:"recipient"`
 	Message   *Message   `json:"message"`
-	//NotificationType NotificationType `json:"notification_type,omitempty"`
+	SenderAction SenderActionType `json:"sender_action"`
+	NotificationType NotificationType `json:"notification_type,omitempty"`
 }

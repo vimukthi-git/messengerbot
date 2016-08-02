@@ -18,7 +18,7 @@ type webhook struct {
 	verificationFailedCallback VerificationFailedCallback
 	optinCallback              OptinCallback
 	messageCallback            TextMessageCallback
-	attachementMessageCallback AttachementMessageCallback
+	attachmentMessageCallback  AttachementMessageCallback
 	deliveryCallback           DeliveryCallback
 	postbackCallback           PostbackCallback
 }
@@ -47,7 +47,7 @@ func (w *webhook) MessageHandler(cb TextMessageCallback) {
 }
 
 func (w *webhook) AttachmentHandler(cb AttachementMessageCallback) {
-	w.attachementMessageCallback = cb
+	w.attachmentMessageCallback = cb
 }
 
 func (w *webhook) DeliveryHandler(cb DeliveryCallback) {
@@ -99,18 +99,25 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 						} else if message, ok := messagingEvent["message"]; ok {
 							sentTime := int64(messagingEvent["timestamp"].(float64))
 							msg := message.(map[string]interface{})
-							if attachments, ok := messagingEvent["attachments"].(map[string]interface{}); ok {
-								attachmentPayload := attachments["payload"].(map[string]interface{})
-								w.attachementMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
-									IncomingAttachmentMessage{msg["mid"].(string), msg["seq"].(float64),
-										attachments["type"].(string), attachmentPayload["url"].(string)})
+							//log.Println(msg["attachments"].([]interface{}))
+							if attachments, ok := msg["attachments"].([]interface{}); ok {
+								for _, attachment := range attachments {
+									attachmentMap := attachment.(map[string]interface{})
+									attachmentPayload := attachmentMap["payload"].(map[string]interface{})
+									w.attachmentMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
+										IncomingAttachmentMessage{msg["mid"].(string), msg["seq"].(float64),
+											attachmentMap["type"].(string), attachmentPayload["url"].(string)})
+								}
+
 							} else {
 								w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
 									IncomingTextMessage{msg["mid"].(string), msg["seq"].(float64), msg["text"].(string)})
 							}
 						} else if delivery, ok := messagingEvent["delivery"]; ok {
+							// TODO
 							log.Println("delivery : ", delivery)
 						} else if postback, ok := messagingEvent["postback"]; ok {
+							// TODO
 							log.Println("postback : ", postback)
 						} else {
 							log.Println("unknown event : ", messagingEvent)
@@ -124,42 +131,63 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// SendSenderActionByRecipientId send the given message text to the recipient identified by the given
+// recipientId
+func (w *webhook) SendSenderActionByRecipientId(recipientId string, senderAction SenderActionType) {
+	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, nil,
+		senderAction, ""})
+}
+
 // SendTextMessageByRecipientId send the given message text to the recipient identified by the given
 // recipientId
-func (w *webhook) SendTextMessageByRecipientId(recipientId, messageText string, notificationType NotificationType) {
-	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewTextMessage(messageText, notificationType)})
+func (w *webhook) SendTextMessageByRecipientId(recipientId, messageText string,
+	quickReplies []QuickReply, notificationType NotificationType) {
+	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewTextMessage(messageText, quickReplies),
+		"", notificationType})
 }
 
 // SendImageMessageByRecipientId send the image given by the imageUrl to the recipient identified by the given
 // recipientId
-func (w *webhook) SendImageMessageByRecipientId(recipientId string, imageUrl string, notificationType NotificationType) {
-	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewImageMessage(imageUrl, notificationType)})
+func (w *webhook) SendImageMessageByRecipientId(recipientId, imageUrl string, quickReplies []QuickReply,
+	notificationType NotificationType) {
+	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewImageMessage(imageUrl, quickReplies), "", notificationType})
 }
 
 // SendButtonMessageByRecipientId send the buttons given to the recipient identified by the given
 // recipientId
-func (w *webhook) SendButtonMessageByRecipientId(recipientId string, text string, buttons []Button, notificationType NotificationType) {
-	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewButtonMessage(text, buttons, notificationType)})
+func (w *webhook) SendButtonMessageByRecipientId(recipientId, text string, buttons []Button,
+	quickReplies []QuickReply, notificationType NotificationType) {
+	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewButtonMessage(text, buttons, quickReplies),
+		"", notificationType})
 }
 
 // SendGenericMessageByRecipientId send the generic message to the recipient identified by the given
 // recipientId
-func (w *webhook) SendGenericMessageByRecipientId(recipientId string, elements []GenericTemplateElement, notificationType NotificationType) {
-	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewGenericMessage(elements, notificationType)})
+func (w *webhook) SendGenericMessageByRecipientId(recipientId string, elements []GenericTemplateElement,
+	quickReplies []QuickReply, notificationType NotificationType) {
+	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewGenericMessage(elements, quickReplies),
+		"", notificationType})
 }
 
 // SendReceiptMessageByRecipientId send the receipt message to the recipient identified by the given
 // recipientId
-func (w *webhook) SendReceiptMessageByRecipientId(recipientId string, recipientName string, orderNumber string,
-	currency string, paymentMethod string, timestamp string, orderUrl string, elements []ReceiptTemplateElement,
-	shippingAddress Address, paymentSummary Summary, adjustments []Adjustment,
+func (w *webhook) SendReceiptMessageByRecipientId(recipientId, recipientName, orderNumber,
+	currency, paymentMethod, timestamp, orderUrl string, elements []ReceiptTemplateElement,
+	shippingAddress Address, paymentSummary Summary, adjustments []Adjustment, quickReplies []QuickReply,
 	notificationType NotificationType) {
 
-	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewReceiptMessage(recipientName, orderNumber,
-		currency, paymentMethod,
-		timestamp, orderUrl, elements,
-		shippingAddress, paymentSummary, adjustments,
-		notificationType)})
+	w.callSendApi(MessageEnvelope{
+		Recipient{Id:recipientId},
+		NewReceiptMessage(
+			recipientName, orderNumber,
+			currency, paymentMethod,
+			timestamp, orderUrl, elements,
+			shippingAddress, paymentSummary, adjustments,
+			quickReplies,
+		),
+		"",
+		notificationType,
+	})
 }
 
 func (w *webhook) callSendApi(data MessageEnvelope) {

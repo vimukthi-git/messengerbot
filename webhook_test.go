@@ -12,14 +12,18 @@ func TestWebhook(t *testing.T) {
 	w.MessageHandler(func(pageId string, s Sender, r Recipient, t time.Time, m IncomingTextMessage) bool {
 		switch m.Text {
 		case "image":
-			w.SendImageMessageByRecipientId(s.Id, "http://messengerdemo.parseapp.com/img/touch.png", "")
+			w.SendImageMessageByRecipientId(s.Id, "http://messengerdemo.parseapp.com/img/touch.png", []QuickReply{QuickReply{}}, "")
 			break
 
 		case "button":
 			w.SendButtonMessageByRecipientId(s.Id, "VB Super", []Button{
 				Button{Type:WEB_URL, Title:"Open Web URL", Url: "https://www.oculus.com/en-us/rift/"},
 				Button{Type:POSTBACK, Title:"Call Postback", Payload: "Payload for first bubble"},
-			}, "")
+			}, nil, "")
+			break
+
+		case "typing":
+			w.SendSenderActionByRecipientId(s.Id, TYPING_ON)
 			break
 
 		case "generic":
@@ -44,7 +48,7 @@ func TestWebhook(t *testing.T) {
 						Button{Type:POSTBACK, Title:"Call Postback", Payload: "Payload for second bubble"},
 					},
 				},
-			}, "")
+			}, []QuickReply{QuickReply{Title: "TestReply", ContentType: TEXT, Payload: "test"}}, "")
 			break
 
 		case "receipt":
@@ -78,12 +82,11 @@ func TestWebhook(t *testing.T) {
 						Name: "adj",
 						Amount: 1,
 					},
-				},
-			"")
+				}, []QuickReply{QuickReply{}}, "")
 			break
 
 		default:
-			w.SendTextMessageByRecipientId(s.Id, m.Text, REGULAR)
+			w.SendTextMessageByRecipientId(s.Id, m.Text, []QuickReply{QuickReply{}}, REGULAR)
 		}
 		return true
 	})
