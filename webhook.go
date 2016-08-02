@@ -110,8 +110,16 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 								}
 
 							} else {
-								w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
-									IncomingTextMessage{msg["mid"].(string), msg["seq"].(float64), msg["text"].(string)})
+								if str_mid, ok_mid := msg["mid"].(string); ok_mid {
+									if str_text, ok_text := msg["text"].(string); ok_text {
+										w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
+										IncomingTextMessage{str_mid, msg["seq"].(float64), str_text})
+									} else {
+										log.Println("warning: cannot cast msg[\"text\"] to string")
+									}
+								} else {
+									log.Println("warning: cannot cast msg[\"mid\"] to string")
+								}
 							}
 						} else if delivery, ok := messagingEvent["delivery"]; ok {
 							// TODO
@@ -213,4 +221,3 @@ func (w *webhook) callSendApi(data MessageEnvelope) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
 }
-
