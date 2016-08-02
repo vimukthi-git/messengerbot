@@ -12,7 +12,7 @@ func TestWebhook(t *testing.T) {
 	w.MessageHandler(func(pageId string, s Sender, r Recipient, t time.Time, m IncomingTextMessage) bool {
 		switch m.Text {
 		case "image":
-			w.SendImageMessageByRecipientId(s.Id, "http://messengerdemo.parseapp.com/img/touch.png", []QuickReply{QuickReply{}}, "")
+			w.SendImageMessageByRecipientId(s.Id, "http://messengerdemo.parseapp.com/img/touch.png", nil, "")
 			break
 
 		case "button":
@@ -82,11 +82,11 @@ func TestWebhook(t *testing.T) {
 						Name: "adj",
 						Amount: 1,
 					},
-				}, []QuickReply{QuickReply{}}, "")
+				}, []QuickReply{QuickReply{Title: "TestReply", ContentType: TEXT, Payload: "test"}}, "")
 			break
 
 		default:
-			w.SendTextMessageByRecipientId(s.Id, m.Text, []QuickReply{QuickReply{}}, REGULAR)
+			w.SendTextMessageByRecipientId(s.Id, m.Text, nil, REGULAR)
 		}
 		return true
 	})
