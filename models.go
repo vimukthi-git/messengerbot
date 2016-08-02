@@ -17,6 +17,16 @@ type IncomingAttachmentMessage struct {
 	AttachmentUrl string
 }
 
+type EventDelivery struct {
+	Mid  string  `json:"mid,omitempty"`
+	Watermark  float64 `json:"watermark,omitempty"`
+	Seq  float64 `json:"seq,omitempty"`
+}
+
+type EventPostback  struct {
+	Payload  string  `json:"payload,omitempty"`
+}
+
 
 type VerifiedCallback func() string
 
@@ -28,9 +38,9 @@ type TextMessageCallback func(string, Sender, Recipient, time.Time, IncomingText
 
 type AttachementMessageCallback func(string, Sender, Recipient, time.Time, IncomingAttachmentMessage) bool
 
-type DeliveryCallback func() string
+type DeliveryCallback func(string, Sender, Recipient, EventDelivery) bool
 
-type PostbackCallback func() string
+type PostbackCallback func(string, Sender, Recipient, time.Time, EventPostback) bool
 
 // send api
 // https://developers.facebook.com/docs/messenger-platform/send-api-reference

@@ -117,26 +117,25 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 									}
 
 									str_mid, ok_mid := msg["mid"].(string)
-									if ok_mid {
+									if !ok_mid {
 										stop = true
 										log.Println("warning: cannot cast msg[\"mid\"] to string")
 									}
 
 									float_seq, ok_seq := msg["seq"].(float64);
-									if ok_seq {
+									if !ok_seq {
 										stop = true
 										log.Println("warning: cannot cast msg[\"seq\"] to float")
 									}
 
 									str_type, ok_type := attachmentMap["type"].(string)
-									if ok_type {
+									if !ok_type {
 										stop = true
 										log.Println("warning: cannot cast attachmentMap[\"type\"] to string")
 									}
 
-
 									str_url, ok_url := attachmentPayload["url"].(string);
-									if ok_url {
+									if !ok_url {
 										stop = true
 										log.Println("warning: cannot cast attachmentPayload[\"url\"].(string)} to string")
 									}
@@ -145,28 +144,98 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 										w.attachmentMessageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
 										IncomingAttachmentMessage{str_mid, float_seq, str_type, str_url})
 									} else {
-										log.Println("warning: callback stopped due to casting errors")
+										log.Println("warning: attachmentMessageCallback stopped due to casting errors")
 									}
 								}
-
 							} else {
-								if str_mid, ok_mid := msg["mid"].(string); ok_mid {
-									if str_text, ok_text := msg["text"].(string); ok_text {
-										w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
-										IncomingTextMessage{str_mid, msg["seq"].(float64), str_text})
-									} else {
-										log.Println("warning: cannot cast msg[\"text\"] to string")
-									}
-								} else {
+								stop := false
+
+								str_mid, ok_mid := msg["mid"].(string)
+								if !ok_mid {
+									stop = true
 									log.Println("warning: cannot cast msg[\"mid\"] to string")
+								}
+
+								str_text, ok_text := msg["text"].(string)
+								if !ok_text {
+									stop = true
+									log.Println("warning: cannot cast msg[\"text\"] to string")
+								}
+
+								float_seq, ok_seq := msg["seq"].(float64);
+								if !ok_seq {
+									stop = true
+									log.Println("warning: cannot cast msg[\"seq\"] to float")
+								}
+
+								if !stop {
+									w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
+									IncomingTextMessage{str_mid, float_seq, str_text})
+								} else {
+									log.Println("warning: messageCallback stopped due to casting errors")
 								}
 							}
 						} else if delivery, ok := messagingEvent["delivery"]; ok {
-							// TODO
-							log.Println("delivery : ", delivery)
+							del := delivery.(map[string]interface{})
+
+							stop := false
+
+							float_seq, ok_seq := del["seq"].(float64);
+							if !ok_seq {
+								stop = true
+								log.Println("warning: cannot cast del[\"seq\"] to float")
+							}
+
+							float_wmrk, ok_wmrk := del["watermark"].(float64);
+							if !ok_wmrk {
+								stop = true
+								log.Println("warning: cannot cast del[\"watermark\"] to float")
+							}
+
+							if !stop {
+								mids, ok_mids := del["mids"].([]interface{});
+
+								if !ok_mids {
+									log.Println("warning: deliveryCallback stopped, del[\"mids\"] is not an array")
+								} else {
+									for _, mid := range mids {
+										nested := false
+
+										str_mid, ok_mid := mid.(string)
+										if !ok_mid {
+											nested = true
+											log.Println("warning: cannot cast object of mids to string")
+										}
+
+										if !nested {
+											w.deliveryCallback(pageId, sender, recipient,
+											EventDelivery{str_mid, float_wmrk, float_seq})
+										} else {
+											log.Println("warning: deliveryCallback stopped due to casting errors")
+										}
+									}
+								}
+							} else {
+								log.Println("warning: all deliveryCallback's stopped due to casting errors")
+							}
 						} else if postback, ok := messagingEvent["postback"]; ok {
-							// TODO
-							log.Println("postback : ", postback)
+							sentTime := int64(messagingEvent["timestamp"].(float64))
+							pos := postback.(map[string]interface{})
+
+							stop := false
+
+							str_payload, ok_payload := pos["payload"].(string)
+							if !ok_payload {
+								stop = true
+								log.Println("warning: cannot cast pos[\"payload\"] to string")
+							}
+
+							if !stop {
+								w.postbackCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
+								EventPostback{str_payload})
+							} else {
+								log.Println("warning: postbackCallback stopped due to casting errors")
+							}
 						} else {
 							log.Println("unknown event : ", messagingEvent)
 						}
