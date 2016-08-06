@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type webhook struct {
+type Webhook struct {
 	validationToken            string
 	pageAccessToken            string
 	verifiedCallback           VerifiedCallback
@@ -23,8 +23,8 @@ type webhook struct {
 	postbackCallback           PostbackCallback
 }
 
-func NewMessengerWebhook(validationToken, pageAccessToken string) *webhook {
-	m := new(webhook)
+func NewMessengerWebhook(validationToken, pageAccessToken string) *Webhook {
+	m := new(Webhook)
 	m.validationToken = validationToken
 	m.pageAccessToken = pageAccessToken
 	m.verifiedCallback = func() string {log.Println("Default verfied callback called"); return ""}
@@ -42,35 +42,35 @@ func NewMessengerWebhook(validationToken, pageAccessToken string) *webhook {
 	return m
 }
 
-func (w *webhook) VerfiedHandler(cb VerifiedCallback) {
+func (w *Webhook) VerfiedHandler(cb VerifiedCallback) {
 	w.verifiedCallback = cb
 }
 
-func (w *webhook) VerficationFailedHandler(cb VerificationFailedCallback) {
+func (w *Webhook) VerficationFailedHandler(cb VerificationFailedCallback) {
 	w.verificationFailedCallback = cb
 }
 
-func (w *webhook) OptinHandler(cb OptinCallback) {
+func (w *Webhook) OptinHandler(cb OptinCallback) {
 	w.optinCallback = cb
 }
 
-func (w *webhook) MessageHandler(cb TextMessageCallback) {
+func (w *Webhook) MessageHandler(cb TextMessageCallback) {
 	w.messageCallback = cb
 }
 
-func (w *webhook) AttachmentHandler(cb AttachementMessageCallback) {
+func (w *Webhook) AttachmentHandler(cb AttachementMessageCallback) {
 	w.attachmentMessageCallback = cb
 }
 
-func (w *webhook) DeliveryHandler(cb DeliveryCallback) {
+func (w *Webhook) DeliveryHandler(cb DeliveryCallback) {
 	w.deliveryCallback = cb
 }
 
-func (w *webhook) PostbackHandler(cb PostbackCallback) {
+func (w *Webhook) PostbackHandler(cb PostbackCallback) {
 	w.postbackCallback = cb
 }
 
-func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
+func (w *Webhook) Handler(res http.ResponseWriter, req *http.Request) {
 
 	////////////////////////////////////////////////////////
 	// TODO REFACTOR THIS SHIT
@@ -263,14 +263,14 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 
 // SendSenderActionByRecipientId send the given message text to the recipient identified by the given
 // recipientId
-func (w *webhook) SendSenderActionByRecipientId(recipientId string, senderAction SenderActionType) {
+func (w *Webhook) SendSenderActionByRecipientId(recipientId string, senderAction SenderActionType) {
 	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, nil,
 		senderAction, ""})
 }
 
 // SendTextMessageByRecipientId send the given message text to the recipient identified by the given
 // recipientId
-func (w *webhook) SendTextMessageByRecipientId(recipientId, messageText string,
+func (w *Webhook) SendTextMessageByRecipientId(recipientId, messageText string,
 	quickReplies []QuickReply, notificationType NotificationType) {
 	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewTextMessage(messageText, quickReplies),
 		"", notificationType})
@@ -278,14 +278,14 @@ func (w *webhook) SendTextMessageByRecipientId(recipientId, messageText string,
 
 // SendImageMessageByRecipientId send the image given by the imageUrl to the recipient identified by the given
 // recipientId
-func (w *webhook) SendImageMessageByRecipientId(recipientId, imageUrl string, quickReplies []QuickReply,
+func (w *Webhook) SendImageMessageByRecipientId(recipientId, imageUrl string, quickReplies []QuickReply,
 	notificationType NotificationType) {
 	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewImageMessage(imageUrl, quickReplies), "", notificationType})
 }
 
 // SendButtonMessageByRecipientId send the buttons given to the recipient identified by the given
 // recipientId
-func (w *webhook) SendButtonMessageByRecipientId(recipientId, text string, buttons []Button,
+func (w *Webhook) SendButtonMessageByRecipientId(recipientId, text string, buttons []Button,
 	quickReplies []QuickReply, notificationType NotificationType) {
 	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewButtonMessage(text, buttons, quickReplies),
 		"", notificationType})
@@ -293,7 +293,7 @@ func (w *webhook) SendButtonMessageByRecipientId(recipientId, text string, butto
 
 // SendGenericMessageByRecipientId send the generic message to the recipient identified by the given
 // recipientId
-func (w *webhook) SendGenericMessageByRecipientId(recipientId string, elements []GenericTemplateElement,
+func (w *Webhook) SendGenericMessageByRecipientId(recipientId string, elements []GenericTemplateElement,
 	quickReplies []QuickReply, notificationType NotificationType) {
 	w.callSendApi(MessageEnvelope{Recipient{Id:recipientId}, NewGenericMessage(elements, quickReplies),
 		"", notificationType})
@@ -301,7 +301,7 @@ func (w *webhook) SendGenericMessageByRecipientId(recipientId string, elements [
 
 // SendReceiptMessageByRecipientId send the receipt message to the recipient identified by the given
 // recipientId
-func (w *webhook) SendReceiptMessageByRecipientId(recipientId, recipientName, orderNumber,
+func (w *Webhook) SendReceiptMessageByRecipientId(recipientId, recipientName, orderNumber,
 	currency, paymentMethod, timestamp, orderUrl string, elements []ReceiptTemplateElement,
 	shippingAddress Address, paymentSummary Summary, adjustments []Adjustment, quickReplies []QuickReply,
 	notificationType NotificationType) {
@@ -320,7 +320,7 @@ func (w *webhook) SendReceiptMessageByRecipientId(recipientId, recipientName, or
 	})
 }
 
-func (w *webhook) callSendApi(data MessageEnvelope) {
+func (w *Webhook) callSendApi(data MessageEnvelope) {
 	url := "https://graph.facebook.com/v2.6/me/messages?access_token=" + w.pageAccessToken
 	jsonStr, e := json.Marshal(data)
 	if e != nil {
