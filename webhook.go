@@ -27,6 +27,18 @@ func NewMessengerWebhook(validationToken, pageAccessToken string) *webhook {
 	m := new(webhook)
 	m.validationToken = validationToken
 	m.pageAccessToken = pageAccessToken
+	m.verifiedCallback = func() string {log.Println("Default verfied callback called"); return ""}
+	m.verificationFailedCallback = func() string {log.Println("Default verfication failed callback called"); return ""}
+	m.optinCallback = func() string {log.Println("Default optin callback called"); return ""}
+	m.messageCallback = func(id string, s Sender, r Recipient,
+		t time.Time, i IncomingTextMessage) bool {log.Println("Default text message callback called"); return true}
+	m.attachmentMessageCallback = func(id string, s Sender, r Recipient,
+		t time.Time, i IncomingAttachmentMessage) bool {
+		log.Println("Default attachment message callback called"); return true}
+	m.deliveryCallback = func(id string, s Sender, r Recipient,
+		e EventDelivery) bool {log.Println("Default delivery callback called"); return true}
+	m.postbackCallback = func(id string, s Sender, r Recipient,
+		t time.Time, e EventPostback) bool {log.Println("Default postback callback called"); return true}
 	return m
 }
 
@@ -59,6 +71,10 @@ func (w *webhook) PostbackHandler(cb PostbackCallback) {
 }
 
 func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
+
+	////////////////////////////////////////////////////////
+	// TODO REFACTOR THIS SHIT
+	////////////////////////////////////////////////////////
 	if req.Method == http.MethodGet {
 		hubMode := req.URL.Query().Get("hub.mode")
 		hubVerfifyToken := req.URL.Query().Get("hub.verify_token")
@@ -99,11 +115,10 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 						} else if message, ok := messagingEvent["message"]; ok {
 							sentTime := int64(messagingEvent["timestamp"].(float64))
 							msg := message.(map[string]interface{})
-							//log.Println(msg["attachments"].([]interface{}))
 							if attachments, ok := msg["attachments"].([]interface{}); ok {
+								log.Println(attachments)
 								for _, attachment := range attachments {
 									stop := false
-
 									attachmentMap, ok_attachmentMap := attachment.(map[string]interface{})
 									if !ok_attachmentMap {
 										stop = true
@@ -119,7 +134,7 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 									str_mid, ok_mid := msg["mid"].(string)
 									if !ok_mid {
 										stop = true
-										log.Println("warning: cannot cast msg[\"mid\"] to string")
+										log.Println("warning: cannot cast msg[\"mid\"] to string", msg["mid"])
 									}
 
 									float_seq, ok_seq := msg["seq"].(float64);
@@ -177,9 +192,7 @@ func (w *webhook) Handler(res http.ResponseWriter, req *http.Request) {
 							}
 						} else if delivery, ok := messagingEvent["delivery"]; ok {
 							del := delivery.(map[string]interface{})
-
 							stop := false
-
 							float_seq, ok_seq := del["seq"].(float64);
 							if !ok_seq {
 								stop = true
