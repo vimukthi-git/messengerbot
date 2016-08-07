@@ -177,6 +177,16 @@ func (w *Webhook) Handler(res http.ResponseWriter, req *http.Request) {
 									log.Println("warning: cannot cast msg[\"text\"] to string")
 								}
 
+								var quickReply *QuickReply = nil
+								if quickReplyObj, ok := msg["quick_reply"]; ok {
+									if quickReplyMap, ok := quickReplyObj.(map[string]interface{}); ok {
+										if quickReplyPayload, ok := quickReplyMap["payload"].(string); ok {
+											quickReply = &QuickReply{Payload: quickReplyPayload}
+										}
+									}
+									log.Println("warning: cannot cast msg[\"text\"] to string")
+								}
+
 								float_seq, ok_seq := msg["seq"].(float64);
 								if !ok_seq {
 									stop = true
@@ -185,7 +195,7 @@ func (w *Webhook) Handler(res http.ResponseWriter, req *http.Request) {
 
 								if !stop {
 									w.messageCallback(pageId, sender, recipient, time.Unix(sentTime, 0),
-									IncomingTextMessage{str_mid, float_seq, str_text})
+									IncomingTextMessage{str_mid, float_seq, str_text, quickReply})
 								} else {
 									log.Println("warning: messageCallback stopped due to casting errors")
 								}

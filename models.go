@@ -8,6 +8,7 @@ type IncomingTextMessage struct {
 	Mid  string  `json:"mid,omitempty"`
 	Seq  float64 `json:"seq,omitempty"`
 	Text string  `json:"text"`
+	QuickReply *QuickReply `json:"quick_reply"`
 }
 
 type IncomingAttachmentMessage struct {
